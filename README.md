@@ -17,7 +17,9 @@ Finder's Recent Folders. They are never included in **Unmount All**. Removing a
 directory ghost requires a separate confirmation and uses `rmdir`, so a
 non-empty folder is never removed. Removing a bookmark ghost deletes only that
 exact stale recent-folder entry and refreshes Finder; it does not reconnect the
-server, unmount anything, or delete files. **Refresh Finder** by itself only
+server, unmount anything, or delete files. Network bookmark ghosts are also
+removed from Finder's Recent Servers list, because an ordinary unmount cannot
+affect an item that is no longer mounted. **Refresh Finder** by itself only
 restarts Finder to clear stale sidebar or display entries.
 
 The first pass always uses a normal eject, detach, or unmount and continues
@@ -32,6 +34,10 @@ a bulk unmount leaves only failures, the same keys activate each row's force
 action and **Return/Enter** activates **Force All**.
 Press **R** to rescan at any time when no unmount operation or confirmation is
 in progress.
+
+All window actions are mirrored in the native macOS **Actions** menu. The menu
+uses the same enabled states, confirmation dialogs, Return/R/1–9 shortcuts, and
+per-item Unmount, Force, Leave Mounted, and Finder-ghost actions as the window.
 
 ## Shell script
 

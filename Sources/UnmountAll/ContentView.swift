@@ -60,7 +60,7 @@ struct ContentView: View {
             }
         } message: { target in
             if FinderRecentGhostStore.isFinderRecentGhost(target) {
-                Text("UMA will remove only this stale network bookmark from Finder's Recent Folders and then refresh Finder. It will not connect to the server, unmount anything, or delete files.")
+                Text("This is a leftover Finder record, not a mounted filesystem, so Unmount cannot affect it. UMA will remove only this stale network entry from Finder's Recent Servers and Recent Folders, then refresh Finder. It will not connect to the server or delete files.")
             } else {
                 Text("UMA will remove only the empty, unmounted directory at \(target.target). It will not unmount or delete mounted data.")
             }
@@ -191,7 +191,7 @@ struct ContentView: View {
               FinderRecentGhostStore.isFinderRecentGhost(target) else {
             return "Remove Empty Ghost"
         }
-        return "Remove Finder Entry"
+        return "Remove Ghost"
     }
 
     private var hasPrimaryAction: Bool {
@@ -263,7 +263,7 @@ private struct TargetRow: View {
         HStack(spacing: 12) {
             Image(systemName: target.kind.symbol)
                 .font(.title3)
-                .foregroundStyle(target.failureMessage == nil ? Color.accentColor : .red)
+                .foregroundStyle(target.kind == .ghost ? .orange : (target.failureMessage == nil ? Color.accentColor : .red))
                 .frame(width: 26)
             VStack(alignment: .leading, spacing: 3) {
                 Text(target.name)
@@ -324,7 +324,7 @@ private struct TargetRow: View {
     @ViewBuilder
     private var ghostAction: some View {
         if target.failureMessage == nil {
-            Button(FinderRecentGhostStore.isFinderRecentGhost(target) ? "Remove Finder Entry" : "Remove Empty Ghost") {
+            Button(FinderRecentGhostStore.isFinderRecentGhost(target) ? "Remove Ghost" : "Remove Empty Ghost") {
                 model.requestGhostRemoval(target)
             }
             .buttonStyle(.bordered)

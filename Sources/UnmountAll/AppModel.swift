@@ -44,7 +44,12 @@ final class AppModel: ObservableObject {
             let mountedTargets = MachineOutputParser.parse(command.output).compactMap {
                 if case let .target(target) = $0 { target } else { nil }
             }
-            targets = mountedTargets + FinderRecentGhostStore.discover()
+            let mountedNames = Set(
+                mountedTargets
+                    .filter { $0.kind != .ghost }
+                    .map(\.name)
+            )
+            targets = mountedTargets + FinderRecentGhostStore.discover(excludingMountedNames: mountedNames)
             statusMessage = targets.isEmpty
                 ? "No supported mounted items found."
                 : "Found \(targets.count) supported \(targets.count == 1 ? "item" : "items")."
