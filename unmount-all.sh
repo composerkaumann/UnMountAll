@@ -267,41 +267,12 @@ discover_network_mounts() {
     done <"$mounts_file"
 }
 
-discover_finder_ghosts() {
-    local mounts_file="$1"
-    local active_mounts="$WORK_DIR/active-mounts.txt"
-    local line
-
-    : >"$active_mounts"
-    while IFS= read -r line; do
-        split_mount_line "$line"
-        /usr/bin/printf '%s\n' "$MOUNT_POINT" >>"$active_mounts"
-    done <"$mounts_file"
-
-    local directory base first_entry
-    for directory in /Volumes/*; do
-        [ -d "$directory" ] || continue
-        [ -L "$directory" ] && continue
-        base="${directory##*/}"
-        case "$base" in
-            .*|com.apple.*) continue ;;
-        esac
-
-        /usr/bin/grep -Fqx "$directory" "$active_mounts" && continue
-        first_entry="$(/usr/bin/find "$directory" -mindepth 1 -maxdepth 1 -print -quit 2>/dev/null)"
-        [ -z "$first_entry" ] || continue
-
-        emit_target ghost "$base" "Empty stale Finder mount point • $directory" "$directory"
-    done
-}
-
 discover() {
     local mounts_file="$WORK_DIR/mounts.txt"
     "$MOUNT" >"$mounts_file" 2>/dev/null || return 1
     discover_physical_disks "$mounts_file"
     discover_disk_images
     discover_network_mounts "$mounts_file"
-    discover_finder_ghosts "$mounts_file"
 }
 
 action_description() {
@@ -315,7 +286,6 @@ action_description() {
         image:true) /usr/bin/printf 'hdiutil detach %s -force' "$target" ;;
         network:false) /usr/bin/printf 'diskutil unmount %s' "$target" ;;
         network:true) /usr/bin/printf 'diskutil unmount force %s' "$target" ;;
-        ghost:false) /usr/bin/printf 'rmdir %s' "$target" ;;
         *) /usr/bin/printf 'unsupported action' ;;
     esac
 }
@@ -331,7 +301,6 @@ run_action() {
         image:true) "$HDIUTIL" detach "$target" -force ;;
         network:false) "$DISKUTIL" unmount "$target" ;;
         network:true) "$DISKUTIL" unmount force "$target" ;;
-        ghost:false) /bin/rmdir "$target" ;;
         *) /usr/bin/printf 'Unsupported target type: %s\n' "$kind" >&2; return 64 ;;
     esac
 }
@@ -372,7 +341,6 @@ perform_all() {
     local record id kind name64 detail64 target64
     while IFS=$'\t' read -r record id kind name64 detail64 target64; do
         [ "$record" = target ] || continue
-        [ "$kind" = ghost ] && continue
         perform_one "$id" "$kind" "$(decode "$name64")" "$(decode "$detail64")" \
             "$(decode "$target64")" "$force" "$dry_run"
     done <"$targets_file"

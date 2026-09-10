@@ -4,14 +4,12 @@ enum MountKind: String, Sendable {
     case physical
     case image
     case network
-    case ghost
 
     var title: String {
         switch self {
         case .physical: "External Disk"
         case .image: "Disk Image"
         case .network: "Network Share"
-        case .ghost: "Finder Ghost"
         }
     }
 
@@ -20,7 +18,6 @@ enum MountKind: String, Sendable {
         case .physical: "externaldrive.fill"
         case .image: "opticaldiscdrive.fill"
         case .network: "network"
-        case .ghost: "eye.slash"
         }
     }
 
@@ -28,7 +25,6 @@ enum MountKind: String, Sendable {
         switch self {
         case .physical, .image: "Force Eject"
         case .network: "Force Unmount"
-        case .ghost: "Remove Empty Ghost"
         }
     }
 }

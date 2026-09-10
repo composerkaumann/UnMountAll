@@ -45,27 +45,6 @@ struct ContentView: View {
             Text("Forcing mounted items may cause data loss if files are still open.")
         }
         .confirmationDialog(
-            ghostConfirmationTitle,
-            isPresented: Binding(
-                get: { model.ghostRemovalConfirmation != nil },
-                set: { if !$0 { model.ghostRemovalConfirmation = nil } }
-            ),
-            presenting: model.ghostRemovalConfirmation
-        ) { target in
-            Button(ghostConfirmationButtonTitle, role: .destructive) {
-                Task { await model.removeGhostConfirmed() }
-            }
-            Button("Cancel", role: .cancel) {
-                model.ghostRemovalConfirmation = nil
-            }
-        } message: { target in
-            if FinderRecentGhostStore.isFinderRecentGhost(target) {
-                Text("This is a leftover Finder record, not a mounted filesystem, so Unmount cannot affect it. UMA will remove only this stale network entry from Finder's Recent Servers and Recent Folders, then refresh Finder. It will not connect to the server or delete files.")
-            } else {
-                Text("UMA will remove only the empty, unmounted directory at \(target.target). It will not unmount or delete mounted data.")
-            }
-        }
-        .confirmationDialog(
             "Refresh Finder?",
             isPresented: $model.finderRefreshConfirmation
         ) {
@@ -173,25 +152,9 @@ struct ContentView: View {
     }
 
     private var groupedKinds: [MountKind] {
-        [.physical, .image, .network, .ghost].filter { kind in
+        [.physical, .image, .network].filter { kind in
             model.targets.contains { $0.kind == kind }
         }
-    }
-
-    private var ghostConfirmationTitle: String {
-        guard let target = model.ghostRemovalConfirmation,
-              FinderRecentGhostStore.isFinderRecentGhost(target) else {
-            return "Remove Empty Finder Ghost?"
-        }
-        return "Remove Finder Network Ghost?"
-    }
-
-    private var ghostConfirmationButtonTitle: String {
-        guard let target = model.ghostRemovalConfirmation,
-              FinderRecentGhostStore.isFinderRecentGhost(target) else {
-            return "Remove Empty Ghost"
-        }
-        return "Remove Ghost"
     }
 
     private var hasPrimaryAction: Bool {
@@ -263,7 +226,7 @@ private struct TargetRow: View {
         HStack(spacing: 12) {
             Image(systemName: target.kind.symbol)
                 .font(.title3)
-                .foregroundStyle(target.kind == .ghost ? .orange : (target.failureMessage == nil ? Color.accentColor : .red))
+                .foregroundStyle(target.failureMessage == nil ? Color.accentColor : .red)
                 .frame(width: 26)
             VStack(alignment: .leading, spacing: 3) {
                 Text(target.name)
@@ -281,9 +244,7 @@ private struct TargetRow: View {
                 }
             }
             Spacer(minLength: 16)
-            if target.kind == .ghost {
-                ghostAction
-            } else if target.isLeftMounted {
+            if target.isLeftMounted {
                 Label("Left Mounted", systemImage: "pause.circle")
                     .font(.callout)
                     .foregroundStyle(.secondary)
@@ -321,20 +282,6 @@ private struct TargetRow: View {
         .padding(.vertical, 5)
     }
 
-    @ViewBuilder
-    private var ghostAction: some View {
-        if target.failureMessage == nil {
-            Button(FinderRecentGhostStore.isFinderRecentGhost(target) ? "Remove Ghost" : "Remove Empty Ghost") {
-                model.requestGhostRemoval(target)
-            }
-            .buttonStyle(.bordered)
-            .disabled(model.phase.isBusy)
-        } else {
-            Label("Could not remove", systemImage: "exclamationmark.triangle")
-                .font(.callout)
-                .foregroundStyle(.red)
-        }
-    }
 }
 
 private struct KeyCap: View {

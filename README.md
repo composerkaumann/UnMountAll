@@ -11,16 +11,10 @@ macOS 26 or later:
 - virtual-machine host shares using 9P, VirtioFS, Parallels, VMware, or
   VirtualBox filesystem types.
 
-UMA also finds two kinds of **Finder Ghosts**: empty, stale mount-point
-directories directly under `/Volumes`, and stale network-volume bookmarks in
-Finder's Recent Folders. They are never included in **Unmount All**. Removing a
-directory ghost requires a separate confirmation and uses `rmdir`, so a
-non-empty folder is never removed. Removing a bookmark ghost deletes only that
-exact stale recent-folder entry and refreshes Finder; it does not reconnect the
-server, unmount anything, or delete files. Network bookmark ghosts are also
-removed from Finder's Recent Servers list, because an ordinary unmount cannot
-affect an item that is no longer mounted. **Refresh Finder** by itself only
-restarts Finder to clear stale sidebar or display entries.
+UMA intentionally lists only real, currently mounted filesystems. It does not
+classify Finder history, bookmarks, sidebar entries, or empty `/Volumes`
+directories as mounts and never offers to delete them. **Refresh Finder**
+restarts Finder to clear stale display entries without altering files or mounts.
 
 The first pass always uses a normal eject, detach, or unmount and continues
 even when an individual operation fails. Only failed items remain in one list.
@@ -37,7 +31,7 @@ in progress.
 
 All window actions are mirrored in the native macOS **Actions** menu. The menu
 uses the same enabled states, confirmation dialogs, Return/R/1–9 shortcuts, and
-per-item Unmount, Force, Leave Mounted, and Finder-ghost actions as the window.
+per-item Unmount, Force, and Leave Mounted actions as the window.
 
 ## Shell script
 

@@ -40,7 +40,7 @@ private struct UMACommands: Commands {
 
             ForEach(model.targets) { target in
                 targetAction(target)
-                if target.failureMessage != nil, !target.isLeftMounted, target.kind != .ghost {
+                if target.failureMessage != nil, !target.isLeftMounted {
                     Button("Leave Mounted: \(target.name)") {
                         model.leaveMounted(target)
                     }
@@ -65,12 +65,7 @@ private struct UMACommands: Commands {
 
     @ViewBuilder
     private func targetAction(_ target: MountTarget) -> some View {
-        if target.kind == .ghost {
-            Button("Remove Ghost: \(target.name)") {
-                model.requestGhostRemoval(target)
-            }
-            .disabled(model.phase.isBusy || target.failureMessage != nil)
-        } else if target.isLeftMounted {
+        if target.isLeftMounted {
             Button("Left Mounted: \(target.name)") {}
                 .disabled(true)
         } else if let number = model.shortcutNumber(for: target) {

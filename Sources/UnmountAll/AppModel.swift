@@ -17,15 +17,14 @@ final class AppModel: ObservableObject {
     @Published private(set) var statusMessage = "Scanning mounted items…"
     @Published var forceConfirmation: MountTarget?
     @Published var forceAllConfirmation = false
-    @Published var ghostRemovalConfirmation: MountTarget?
     @Published var finderRefreshConfirmation = false
 
     var hasNormalTargets: Bool {
-        targets.contains { $0.kind != .ghost && $0.failureMessage == nil }
+        targets.contains { $0.failureMessage == nil }
     }
 
     var hasActionableFailures: Bool {
-        targets.contains { $0.kind != .ghost && $0.failureMessage != nil && !$0.isLeftMounted }
+        targets.contains { $0.failureMessage != nil && !$0.isLeftMounted }
     }
 
     func scan() async {
@@ -41,18 +40,12 @@ final class AppModel: ObservableObject {
                 statusMessage = command.error.nonEmpty ?? "Scanning failed."
                 return
             }
-            let mountedTargets = MachineOutputParser.parse(command.output).compactMap {
+            targets = MachineOutputParser.parse(command.output).compactMap {
                 if case let .target(target) = $0 { target } else { nil }
             }
-            let mountedNames = Set(
-                mountedTargets
-                    .filter { $0.kind != .ghost }
-                    .map(\.name)
-            )
-            targets = mountedTargets + FinderRecentGhostStore.discover(excludingMountedNames: mountedNames)
             statusMessage = targets.isEmpty
                 ? "No supported mounted items found."
-                : "Found \(targets.count) supported \(targets.count == 1 ? "item" : "items")."
+                : "Found \(targets.count) mounted \(targets.count == 1 ? "item" : "items")."
         } catch {
             targets = []
             statusMessage = error.localizedDescription
@@ -71,8 +64,7 @@ final class AppModel: ObservableObject {
                 if case let .result(result) = $0 { result } else { nil }
             }
             let failures = results.filter { $0.state == .failure }.map(\.target)
-            let ghosts = targets.filter { $0.kind == .ghost }
-            targets = failures + ghosts
+            targets = failures
 
             if results.isEmpty, command.status != 0 {
                 statusMessage = command.error.nonEmpty ?? "The unmount operation failed."
@@ -92,9 +84,7 @@ final class AppModel: ObservableObject {
     func unmount(_ target: MountTarget) async {
         guard !phase.isBusy, target.failureMessage == nil else { return }
         phase = .unmounting
-        statusMessage = target.kind == .ghost
-            ? "Removing empty Finder ghost \(target.name)…"
-            : "Unmounting \(target.name)…"
+        statusMessage = "Unmounting \(target.name)…"
         defer { phase = .idle }
 
         do {
@@ -108,14 +98,10 @@ final class AppModel: ObservableObject {
 
             if result.state == .success {
                 targets.removeAll { $0.id == target.id }
-                statusMessage = target.kind == .ghost
-                    ? "Empty Finder ghost \(target.name) was removed."
-                    : "\(target.name) was unmounted successfully."
+                statusMessage = "\(target.name) was unmounted successfully."
             } else {
                 updateFailure(for: target.id, message: result.message)
-                statusMessage = target.kind == .ghost
-                    ? "Could not remove empty Finder ghost \(target.name)."
-                    : "Could not unmount \(target.name). Choose Force or Leave Mounted."
+                statusMessage = "Could not unmount \(target.name). Choose Force or Leave Mounted."
             }
         } catch {
             updateFailure(for: target.id, message: error.localizedDescription)
@@ -124,45 +110,7 @@ final class AppModel: ObservableObject {
     }
 
     func requestForce(_ target: MountTarget) {
-        guard target.kind != .ghost else { return }
         forceConfirmation = target
-    }
-
-    func requestGhostRemoval(_ target: MountTarget) {
-        guard target.kind == .ghost, !phase.isBusy else { return }
-        ghostRemovalConfirmation = target
-    }
-
-    func removeGhostConfirmed() async {
-        guard let target = ghostRemovalConfirmation else { return }
-        ghostRemovalConfirmation = nil
-        if FinderRecentGhostStore.isFinderRecentGhost(target) {
-            await removeFinderRecentGhost(target)
-            return
-        }
-        await unmount(target)
-    }
-
-    private func removeFinderRecentGhost(_ target: MountTarget) async {
-        guard !phase.isBusy else { return }
-        phase = .unmounting
-        statusMessage = "Removing Finder bookmark ghost \(target.name)…"
-        defer { phase = .idle }
-
-        do {
-            try FinderRecentGhostStore.remove(target)
-            let refresh = try await ScriptRunner.run(arguments: ["--refresh-finder"])
-            guard refresh.status == 0 else {
-                targets.removeAll { $0.id == target.id }
-                statusMessage = "The Finder entry was removed, but Finder could not be refreshed."
-                return
-            }
-            targets.removeAll { $0.id == target.id }
-            statusMessage = "Finder bookmark ghost \(target.name) was removed."
-        } catch {
-            updateFailure(for: target.id, message: error.localizedDescription)
-            statusMessage = "Could not remove Finder bookmark ghost \(target.name)."
-        }
     }
 
     func requestFinderRefresh() {
@@ -180,7 +128,7 @@ final class AppModel: ObservableObject {
         do {
             let command = try await ScriptRunner.run(arguments: ["--refresh-finder"])
             if command.status == 0 {
-                statusMessage = "Finder refreshed. Rescan to check for remaining ghosts."
+                statusMessage = "Finder refreshed. Rescan to update mounted items."
             } else {
                 statusMessage = command.error.nonEmpty ?? "Finder could not be refreshed."
             }
@@ -230,7 +178,7 @@ final class AppModel: ObservableObject {
 
     func forceAllConfirmed() async {
         guard !phase.isBusy else { return }
-        let failures = targets.filter { $0.kind != .ghost && $0.failureMessage != nil && !$0.isLeftMounted }
+        let failures = targets.filter { $0.failureMessage != nil && !$0.isLeftMounted }
         guard !failures.isEmpty else { return }
 
         forceAllConfirmation = false
@@ -265,18 +213,15 @@ final class AppModel: ObservableObject {
     }
 
     func shortcutNumber(for target: MountTarget) -> Int? {
-        guard target.kind != .ghost else { return nil }
-        let shortcuts = targets.filter { $0.kind != .ghost }
-        guard let index = shortcuts.firstIndex(where: { $0.id == target.id }), index < 9 else {
+        guard let index = targets.firstIndex(where: { $0.id == target.id }), index < 9 else {
             return nil
         }
         return index + 1
     }
 
     func targetForShortcut(_ number: Int) -> MountTarget? {
-        let shortcuts = targets.filter { $0.kind != .ghost }
-        guard (1...9).contains(number), shortcuts.indices.contains(number - 1) else { return nil }
-        let target = shortcuts[number - 1]
+        guard (1...9).contains(number), targets.indices.contains(number - 1) else { return nil }
+        let target = targets[number - 1]
         return target.isLeftMounted ? nil : target
     }
 
