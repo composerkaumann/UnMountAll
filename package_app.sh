@@ -7,9 +7,10 @@ BUILD_DIR="$(/usr/bin/mktemp -d "${TMPDIR:-/tmp}/unmount-all-build.XXXXXX")"
 APP_DIR="$ROOT_DIR/dist/UMA.app"
 LEGACY_APP_DIR="$ROOT_DIR/dist/Unmount All.app"
 CONTENTS_DIR="$APP_DIR/Contents"
-ICON_SOURCE="$ROOT_DIR/Assets/AppIconSource.png"
+ASSET_CATALOG="$ROOT_DIR/Assets/Assets.xcassets"
 VERSION_FILE="$ROOT_DIR/VERSION"
 BUILD_NUMBER_FILE="$ROOT_DIR/BUILD_NUMBER"
+XCODE_VERSION_CONFIG="$ROOT_DIR/Config/Version.xcconfig"
 trap '/bin/rm -rf "$BUILD_DIR"' EXIT HUP INT TERM
 
 PREVIOUS_VERSION="1.0.0"
@@ -42,30 +43,30 @@ APP_VERSION="$VERSION_MAJOR.$VERSION_MINOR.$((VERSION_PATCH + 1))"
 APP_BUILD="$((PREVIOUS_BUILD + 1))"
 
 cd "$ROOT_DIR"
+CLANG_MODULE_CACHE_PATH="$BUILD_DIR/ModuleCache" \
+SWIFTPM_MODULECACHE_OVERRIDE="$BUILD_DIR/ModuleCache" \
 /usr/bin/xcrun swift build \
     --configuration release \
     --arch arm64 \
     --scratch-path "$BUILD_DIR"
 
-ICONSET_DIR="$BUILD_DIR/AppIcon.iconset"
-/bin/mkdir -p "$ICONSET_DIR"
-/usr/bin/sips -z 16 16 "$ICON_SOURCE" --out "$ICONSET_DIR/icon_16x16.png" >/dev/null
-/usr/bin/sips -z 32 32 "$ICON_SOURCE" --out "$ICONSET_DIR/icon_16x16@2x.png" >/dev/null
-/usr/bin/sips -z 32 32 "$ICON_SOURCE" --out "$ICONSET_DIR/icon_32x32.png" >/dev/null
-/usr/bin/sips -z 64 64 "$ICON_SOURCE" --out "$ICONSET_DIR/icon_32x32@2x.png" >/dev/null
-/usr/bin/sips -z 128 128 "$ICON_SOURCE" --out "$ICONSET_DIR/icon_128x128.png" >/dev/null
-/usr/bin/sips -z 256 256 "$ICON_SOURCE" --out "$ICONSET_DIR/icon_128x128@2x.png" >/dev/null
-/usr/bin/sips -z 256 256 "$ICON_SOURCE" --out "$ICONSET_DIR/icon_256x256.png" >/dev/null
-/usr/bin/sips -z 512 512 "$ICON_SOURCE" --out "$ICONSET_DIR/icon_256x256@2x.png" >/dev/null
-/usr/bin/sips -z 512 512 "$ICON_SOURCE" --out "$ICONSET_DIR/icon_512x512.png" >/dev/null
-/usr/bin/sips -z 1024 1024 "$ICON_SOURCE" --out "$ICONSET_DIR/icon_512x512@2x.png" >/dev/null
-/usr/bin/iconutil -c icns "$ICONSET_DIR" -o "$BUILD_DIR/AppIcon.icns"
-
 /bin/rm -rf "$APP_DIR"
 /bin/mkdir -p "$CONTENTS_DIR/MacOS" "$CONTENTS_DIR/Resources"
 /usr/bin/ditto "$BUILD_DIR/arm64-apple-macosx/release/UnmountAll" "$CONTENTS_DIR/MacOS/UMA"
 /usr/bin/ditto "$ROOT_DIR/unmount-all.sh" "$CONTENTS_DIR/Resources/unmount-all.sh"
-/usr/bin/ditto "$BUILD_DIR/AppIcon.icns" "$CONTENTS_DIR/Resources/AppIcon.icns"
+/usr/bin/xcrun actool "$ASSET_CATALOG" \
+    --compile "$CONTENTS_DIR/Resources" \
+    --output-format human-readable-text \
+    --warnings \
+    --notices \
+    --app-icon AppIcon \
+    --enable-on-demand-resources NO \
+    --development-region en \
+    --target-device mac \
+    --minimum-deployment-target 26.0 \
+    --platform macosx \
+    --bundle-identifier ee.music.UMA \
+    --output-partial-info-plist "$BUILD_DIR/asset-info.plist"
 /bin/chmod 755 "$CONTENTS_DIR/MacOS/UMA" "$CONTENTS_DIR/Resources/unmount-all.sh"
 
 /usr/bin/plutil -create xml1 "$CONTENTS_DIR/Info.plist"
@@ -88,6 +89,9 @@ ICONSET_DIR="$BUILD_DIR/AppIcon.iconset"
 
 /usr/bin/printf '%s\n' "$APP_VERSION" >"$VERSION_FILE"
 /usr/bin/printf '%s\n' "$APP_BUILD" >"$BUILD_NUMBER_FILE"
+/bin/mkdir -p "${XCODE_VERSION_CONFIG%/*}"
+/usr/bin/printf 'MARKETING_VERSION = %s\nCURRENT_PROJECT_VERSION = %s\n' \
+    "$APP_VERSION" "$APP_BUILD" >"$XCODE_VERSION_CONFIG"
 
 if [ -d "$LEGACY_APP_DIR" ]; then
     /bin/rm -rf "$LEGACY_APP_DIR"

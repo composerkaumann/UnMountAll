@@ -65,6 +65,11 @@ an allowed, currently mounted item:
 
 ## SwiftUI app
 
+Open `UMA.xcodeproj` in Xcode to build and run the same native app from the
+shared Swift sources. The project includes the shell helper and app icon as
+bundle resources, targets Apple silicon, and uses `Config/Version.xcconfig` for
+the same version and build numbers as the packaging script.
+
 Build the native arm64 app:
 
 ```sh
