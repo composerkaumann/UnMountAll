@@ -43,6 +43,15 @@ APP_VERSION="$VERSION_MAJOR.$VERSION_MINOR.$((VERSION_PATCH + 1))"
 APP_BUILD="$((PREVIOUS_BUILD + 1))"
 
 cd "$ROOT_DIR"
+SWIFT_BIN_DIR="$(
+    CLANG_MODULE_CACHE_PATH="$BUILD_DIR/ModuleCache" \
+    SWIFTPM_MODULECACHE_OVERRIDE="$BUILD_DIR/ModuleCache" \
+    /usr/bin/xcrun swift build \
+        --configuration release \
+        --arch arm64 \
+        --scratch-path "$BUILD_DIR" \
+        --show-bin-path
+)"
 CLANG_MODULE_CACHE_PATH="$BUILD_DIR/ModuleCache" \
 SWIFTPM_MODULECACHE_OVERRIDE="$BUILD_DIR/ModuleCache" \
 /usr/bin/xcrun swift build \
@@ -52,7 +61,7 @@ SWIFTPM_MODULECACHE_OVERRIDE="$BUILD_DIR/ModuleCache" \
 
 /bin/rm -rf "$APP_DIR"
 /bin/mkdir -p "$CONTENTS_DIR/MacOS" "$CONTENTS_DIR/Resources"
-/usr/bin/ditto "$BUILD_DIR/arm64-apple-macosx/release/UnmountAll" "$CONTENTS_DIR/MacOS/UMA"
+/usr/bin/ditto "$SWIFT_BIN_DIR/UnmountAll" "$CONTENTS_DIR/MacOS/UMA"
 /usr/bin/ditto "$ROOT_DIR/unmount-all.sh" "$CONTENTS_DIR/Resources/unmount-all.sh"
 /usr/bin/xcrun actool "$ASSET_CATALOG" \
     --compile "$CONTENTS_DIR/Resources" \

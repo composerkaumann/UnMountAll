@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Safely eject mounted external disks, detach mounted disk images, and
+# Safely eject mounted external disks and disk images, and
 # unmount supported network shares on macOS.
 
 set -u
@@ -282,8 +282,8 @@ action_description() {
     case "$kind:$force" in
         physical:false) /usr/bin/printf 'diskutil eject %s' "$target" ;;
         physical:true) /usr/bin/printf 'diskutil eject force %s' "$target" ;;
-        image:false) /usr/bin/printf 'hdiutil detach %s' "$target" ;;
-        image:true) /usr/bin/printf 'hdiutil detach %s -force' "$target" ;;
+        image:false) /usr/bin/printf 'diskutil eject %s' "$target" ;;
+        image:true) /usr/bin/printf 'diskutil eject force %s' "$target" ;;
         network:false) /usr/bin/printf 'diskutil unmount %s' "$target" ;;
         network:true) /usr/bin/printf 'diskutil unmount force %s' "$target" ;;
         *) /usr/bin/printf 'unsupported action' ;;
@@ -297,8 +297,8 @@ run_action() {
     case "$kind:$force" in
         physical:false) "$DISKUTIL" eject "$target" ;;
         physical:true) "$DISKUTIL" eject force "$target" ;;
-        image:false) "$HDIUTIL" detach "$target" ;;
-        image:true) "$HDIUTIL" detach "$target" -force ;;
+        image:false) "$DISKUTIL" eject "$target" ;;
+        image:true) "$DISKUTIL" eject force "$target" ;;
         network:false) "$DISKUTIL" unmount "$target" ;;
         network:true) "$DISKUTIL" unmount force "$target" ;;
         *) /usr/bin/printf 'Unsupported target type: %s\n' "$kind" >&2; return 64 ;;

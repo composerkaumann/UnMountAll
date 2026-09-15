@@ -16,7 +16,7 @@ classify Finder history, bookmarks, sidebar entries, or empty `/Volumes`
 directories as mounts and never offers to delete them. **Refresh Finder**
 restarts Finder to clear stale display entries without altering files or mounts.
 
-The first pass always uses a normal eject, detach, or unmount and continues
+The first pass always uses a normal eject or unmount and continues
 even when an individual operation fails. Only failed items remain in one list.
 Each failed item gets its own **Force Eject** or **Force Unmount** button and a
 **Leave Mounted** button. Force actions include a confirmation warning.
