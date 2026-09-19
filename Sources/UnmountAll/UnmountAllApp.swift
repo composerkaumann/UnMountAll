@@ -5,7 +5,7 @@ struct UnmountAllApp: App {
     @StateObject private var model = AppModel()
 
     var body: some Scene {
-        WindowGroup {
+        WindowGroup("UMA - UnMount All") {
             ContentView()
                 .environmentObject(model)
                 .task {

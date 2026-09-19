@@ -192,6 +192,16 @@ discover_disk_images() {
             entity_index=$((entity_index + 1))
         done
 
+        # Simulator runtimes are system-managed development assets. They stay
+        # mounted while CoreSimulator needs them and must never be offered as
+        # user-ejectable disk images.
+        case "$image_path:$mount_points" in
+            *"/com_apple_MobileAsset_iOSSimulatorRuntime/"*|*"/Library/Developer/CoreSimulator/"*)
+                image_index=$((image_index + 1))
+                continue
+                ;;
+        esac
+
         if [ -n "$mount_points" ] && [ -n "$target_device" ]; then
             local name
             if [ -n "$image_path" ]; then

@@ -91,6 +91,7 @@ The last successful version and build number are persisted in `VERSION` and
 - Physical devices must be reported by `diskutil` as external and physical.
 - Only physical devices with at least one mounted descendant are shown.
 - Disk images must have a mounted system entity reported by `hdiutil`.
+- CoreSimulator runtime disk images are excluded from discovery.
 - Internal local filesystems, Time Machine snapshots, and automount entries
   are ignored.
 - Force actions are never automatic.
