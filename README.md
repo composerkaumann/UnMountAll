@@ -74,7 +74,12 @@ install -m 755 uma.sh "$HOME/.local/bin/uma"
 
 With `$HOME/.local/bin` on your shell's `PATH`, run `uma`, `uma --help`,
 or `uma --unmount-all` from any directory. Running `uma` or `uma.sh`
-without arguments lists mounted items, just like `--list`. Repeat the install commands after
+without arguments opens a numbered interactive mount menu. Enter one number
+or several separated by commas to unmount those items, `0` to unmount all,
+`r` to rescan, or `q` to quit. Failed items return in the menu marked
+`FORCE`; choosing them again requests force-unmount confirmation. Other
+selected items continue even if one fails. Use `uma --list` for a plain,
+noninteractive list. Repeat the install commands after
 updating the project to update the installed copy. The app uses its own
 bundled `uma.sh` and does not depend on the command-line installation.
 

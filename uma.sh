@@ -391,10 +391,104 @@ print_human() {
     done
 }
 
+interactive_menu() {
+    local failures_file="$WORK_DIR/menu-failures.txt"
+    local targets_file="$WORK_DIR/menu-targets.tsv"
+    local result_file="$WORK_DIR/menu-result.tsv"
+    : >"$failures_file"
+
+    while :; do
+        if ! discover >"$targets_file"; then
+            /usr/bin/printf 'Could not scan mounted items.\n' >&2
+            return 1
+        fi
+        local ids=() kinds=() names=() details=() targets=() forces=()
+        local record id kind name64 detail64 target64 count=0 force
+        /usr/bin/printf '\nUMA - UnMount All\n\n'
+        while IFS=$'\t' read -r record id kind name64 detail64 target64; do
+            [ "$record" = target ] || continue
+            force=false
+            /usr/bin/grep -Fqx "$id" "$failures_file" && force=true
+            ids[$count]="$id"
+            kinds[$count]="$kind"
+            names[$count]="$(decode "$name64")"
+            details[$count]="$(decode "$detail64")"
+            targets[$count]="$(decode "$target64")"
+            forces[$count]="$force"
+            /usr/bin/printf '%2d  %-9s %s' "$((count + 1))" "$kind" "${names[$count]}"
+            [ "$force" = false ] || /usr/bin/printf '  [FORCE]'
+            /usr/bin/printf '\n    %s\n' "${details[$count]}"
+            count=$((count + 1))
+        done <"$targets_file"
+        [ "$count" -gt 0 ] || /usr/bin/printf 'NOTHING MOUNTED\n'
+
+        /usr/bin/printf '\nChoose mount number(s), separated by commas.\n'
+        /usr/bin/printf '0 = unmount all (FORCE for failed items), r = rescan, q = quit\n'
+        /usr/bin/printf '> '
+        local choice
+        IFS= read -r choice || return 0
+        choice="$(/usr/bin/printf '%s' "$choice" | /usr/bin/tr -d '[:space:]')"
+        case "$choice" in
+            q|Q) return 0 ;;
+            r|R) continue ;;
+        esac
+
+        local selected=() index token invalid=false seen=','
+        if [ "$choice" = 0 ]; then
+            for ((index=0; index<count; index++)); do selected[${#selected[@]}]="$index"; done
+        elif [[ "$choice" =~ ^[0-9]+(,[0-9]+)*$ ]]; then
+            local tokens=()
+            IFS=',' read -r -a tokens <<<"$choice"
+            for token in "${tokens[@]}"; do
+                if [ "${#token}" -gt 6 ]; then invalid=true; break; fi
+                index=$((10#$token - 1))
+                if [ "$index" -lt 0 ] || [ "$index" -ge "$count" ]; then invalid=true; break; fi
+                case "$seen" in
+                    *",$index,"*) continue ;;
+                esac
+                seen="$seen$index,"
+                selected[${#selected[@]}]="$index"
+            done
+        else
+            invalid=true
+        fi
+        if [ "$invalid" = true ]; then
+            /usr/bin/printf 'Invalid selection. Choose 1–%d, 0, r, or q.\n' "$count"
+            continue
+        fi
+        [ "${#selected[@]}" -gt 0 ] || continue
+
+        local needs_force=false
+        for index in "${selected[@]}"; do
+            [ "${forces[$index]}" = false ] || needs_force=true
+        done
+        if [ "$needs_force" = true ]; then
+            /usr/bin/printf 'FORCE can interrupt open files and lose unsaved data. Continue? [y/N] '
+            local answer
+            IFS= read -r answer || return 0
+            case "$answer" in y|Y|yes|YES) ;; *) continue ;; esac
+        fi
+
+        for index in "${selected[@]}"; do
+            # Rediscover each target before acting: disk identifiers and mount
+            # paths may have changed while the user was choosing a number.
+            perform_target "${kinds[$index]}" "${targets[$index]}" "${forces[$index]}" >"$result_file"
+            print_human <"$result_file"
+            local result_id result_kind state rest
+            while IFS=$'\t' read -r record result_id result_kind state rest; do
+                if [ "$record" = result ] && [ "$state" = failure ]; then
+                    /usr/bin/grep -Fqx "${ids[$index]}" "$failures_file" || \
+                        /usr/bin/printf '%s\n' "${ids[$index]}" >>"$failures_file"
+                fi
+            done <"$result_file"
+        done
+    done
+}
+
 usage() {
     /usr/bin/printf '%s\n' \
         'Usage:' \
-        '  uma                  List mounted items (default)' \
+        '  uma                  Interactive mount menu (default)' \
         '  uma --list' \
         '  uma --dry-run' \
         '  uma --unmount-all' \
@@ -415,7 +509,10 @@ refresh_finder() {
 }
 
 case "${1:-}" in
-    --list|'')
+    '')
+        interactive_menu
+        ;;
+    --list)
         discover | print_human
         ;;
     --list-machine)
