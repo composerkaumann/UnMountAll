@@ -394,12 +394,13 @@ print_human() {
 usage() {
     /usr/bin/printf '%s\n' \
         'Usage:' \
-        '  uma.sh --list' \
-        '  uma.sh --dry-run' \
-        '  uma.sh --unmount-all' \
-        '  uma.sh --unmount TYPE TARGET' \
-        '  uma.sh --force TYPE TARGET' \
-        '  uma.sh --refresh-finder' \
+        '  uma                  List mounted items (default)' \
+        '  uma --list' \
+        '  uma --dry-run' \
+        '  uma --unmount-all' \
+        '  uma --unmount TYPE TARGET' \
+        '  uma --force TYPE TARGET' \
+        '  uma --refresh-finder' \
         '' \
         'TYPE is physical, image, or network.'
 }
@@ -414,7 +415,7 @@ refresh_finder() {
 }
 
 case "${1:-}" in
-    --list)
+    --list|'')
         discover | print_human
         ;;
     --list-machine)
@@ -448,7 +449,7 @@ case "${1:-}" in
     --refresh-finder)
         refresh_finder
         ;;
-    --help|-h|'')
+    --help|-h)
         usage
         ;;
     *)

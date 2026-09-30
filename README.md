@@ -69,11 +69,12 @@ required):
 ```sh
 mkdir -p "$HOME/.local/bin"
 install -m 755 uma.sh "$HOME/.local/bin/uma.sh"
+install -m 755 uma.sh "$HOME/.local/bin/uma"
 ```
 
-With `$HOME/.local/bin` on your shell's `PATH`, run `uma.sh --help`,
-`uma.sh --list`, or `uma.sh --unmount-all` from any directory. Running
-`uma.sh` without arguments shows help. Repeat the install command after
+With `$HOME/.local/bin` on your shell's `PATH`, run `uma`, `uma --help`,
+or `uma --unmount-all` from any directory. Running `uma` or `uma.sh`
+without arguments lists mounted items, just like `--list`. Repeat the install commands after
 updating the project to update the installed copy. The app uses its own
 bundled `uma.sh` and does not depend on the command-line installation.
 
