@@ -403,7 +403,7 @@ interactive_menu() {
             return 1
         fi
         local ids=() kinds=() names=() details=() targets=() forces=()
-        local record id kind name64 detail64 target64 count=0 force
+        local record id kind name64 detail64 target64 count=0 force failure_count=0
         /usr/bin/printf '\nUMA - UnMount All\n\n'
         while IFS=$'\t' read -r record id kind name64 detail64 target64; do
             [ "$record" = target ] || continue
@@ -415,6 +415,7 @@ interactive_menu() {
             details[$count]="$(decode "$detail64")"
             targets[$count]="$(decode "$target64")"
             forces[$count]="$force"
+            [ "$force" = false ] || failure_count=$((failure_count + 1))
             /usr/bin/printf '%2d  %-9s %s' "$((count + 1))" "$kind" "${names[$count]}"
             [ "$force" = false ] || /usr/bin/printf '  [FORCE]'
             /usr/bin/printf '\n    %s\n' "${details[$count]}"
@@ -423,7 +424,13 @@ interactive_menu() {
         [ "$count" -gt 0 ] || /usr/bin/printf 'NOTHING MOUNTED\n'
 
         /usr/bin/printf '\nChoose mount number(s), separated by commas.\n'
-        /usr/bin/printf '0 = unmount all (FORCE for failed items), r = rescan, q = quit\n'
+        if [ "$failure_count" -eq 0 ]; then
+            /usr/bin/printf '0 = unmount all, r = rescan, q = quit\n'
+        elif [ "$failure_count" -eq "$count" ]; then
+            /usr/bin/printf '0 = FORCE all, r = rescan, q = quit\n'
+        else
+            /usr/bin/printf '0 = unmount all (FORCE for failed items), r = rescan, q = quit\n'
+        fi
         /usr/bin/printf '> '
         local choice
         IFS= read -r choice || return 0

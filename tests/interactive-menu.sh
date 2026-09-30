@@ -41,9 +41,14 @@ FIXTURE_COUNT=3
 check_menu invalid-and-duplicate '1,99\n2,2\nq\n' 'disk2:false\n'
 check_menu all-continues-after-failure '0\nq\n' 'disk1:false\ndisk2:false\ndisk3:false\n'
 /usr/bin/grep -Fq '[FORCE]' "$FIXTURE_DIR/output"
+/usr/bin/grep -Fq '0 = FORCE all' "$FIXTURE_DIR/output"
 check_menu force-cancel-and-confirm '1\nr\n1\nn\n1\ny\nq\n' 'disk1:false\ndisk1:true\n'
 check_menu mixed-normal-and-force '1\n1,2\ny\nq\n' 'disk1:false\ndisk1:true\ndisk2:false\n'
 check_menu quit 'q\n' ''
+if /usr/bin/grep -Fq 'FORCE' "$FIXTURE_DIR/output"; then
+    /usr/bin/printf 'FAIL: initial menu mentions FORCE\n' >&2
+    exit 1
+fi
 check_menu eof '' ''
 FIXTURE_COUNT=12
 check_menu multiple-digit-choices '12,10\nq\n' 'disk12:false\ndisk10:false\n'
