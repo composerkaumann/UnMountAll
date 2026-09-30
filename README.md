@@ -38,30 +38,44 @@ per-item Unmount, Force, and Leave Mounted actions as the window.
 Make the scripts executable once:
 
 ```sh
-chmod +x "unmount-all.sh" "package_app.sh"
+chmod +x "uma.sh" "package_app.sh"
 ```
 
 Safe inspection commands:
 
 ```sh
-./unmount-all.sh --list
-./unmount-all.sh --dry-run
+./uma.sh --list
+./uma.sh --dry-run
 ```
 
 Unmount everything supported:
 
 ```sh
-./unmount-all.sh --unmount-all
+./uma.sh --unmount-all
 ```
 
 Force is intentionally limited to a target that the script can rediscover as
 an allowed, currently mounted item:
 
 ```sh
-./unmount-all.sh --force physical disk4
-./unmount-all.sh --force image /dev/disk6
-./unmount-all.sh --force network "/Volumes/Share Name"
+./uma.sh --force physical disk4
+./uma.sh --force image /dev/disk6
+./uma.sh --force network "/Volumes/Share Name"
 ```
+
+Install the standalone script for the current user (no administrator access
+required):
+
+```sh
+mkdir -p "$HOME/.local/bin"
+install -m 755 uma.sh "$HOME/.local/bin/uma.sh"
+```
+
+With `$HOME/.local/bin` on your shell's `PATH`, run `uma.sh --help`,
+`uma.sh --list`, or `uma.sh --unmount-all` from any directory. Running
+`uma.sh` without arguments shows help. Repeat the install command after
+updating the project to update the installed copy. The app uses its own
+bundled `uma.sh` and does not depend on the command-line installation.
 
 ## SwiftUI app
 

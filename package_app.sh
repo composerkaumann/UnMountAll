@@ -3,7 +3,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
-BUILD_DIR="$(/usr/bin/mktemp -d "${TMPDIR:-/tmp}/unmount-all-build.XXXXXX")"
+BUILD_DIR="$(/usr/bin/mktemp -d "${TMPDIR:-/tmp}/uma-build.XXXXXX")"
 APP_DIR="$ROOT_DIR/dist/UMA.app"
 LEGACY_APP_DIR="$ROOT_DIR/dist/Unmount All.app"
 CONTENTS_DIR="$APP_DIR/Contents"
@@ -62,7 +62,7 @@ SWIFTPM_MODULECACHE_OVERRIDE="$BUILD_DIR/ModuleCache" \
 /bin/rm -rf "$APP_DIR"
 /bin/mkdir -p "$CONTENTS_DIR/MacOS" "$CONTENTS_DIR/Resources"
 /usr/bin/ditto "$SWIFT_BIN_DIR/UnmountAll" "$CONTENTS_DIR/MacOS/UMA"
-/usr/bin/ditto "$ROOT_DIR/unmount-all.sh" "$CONTENTS_DIR/Resources/unmount-all.sh"
+/usr/bin/ditto "$ROOT_DIR/uma.sh" "$CONTENTS_DIR/Resources/uma.sh"
 /usr/bin/xcrun actool "$ASSET_CATALOG" \
     --compile "$CONTENTS_DIR/Resources" \
     --output-format human-readable-text \
@@ -76,7 +76,7 @@ SWIFTPM_MODULECACHE_OVERRIDE="$BUILD_DIR/ModuleCache" \
     --platform macosx \
     --bundle-identifier ee.music.UMA \
     --output-partial-info-plist "$BUILD_DIR/asset-info.plist"
-/bin/chmod 755 "$CONTENTS_DIR/MacOS/UMA" "$CONTENTS_DIR/Resources/unmount-all.sh"
+/bin/chmod 755 "$CONTENTS_DIR/MacOS/UMA" "$CONTENTS_DIR/Resources/uma.sh"
 
 /usr/bin/plutil -create xml1 "$CONTENTS_DIR/Info.plist"
 /usr/bin/plutil -insert CFBundleDevelopmentRegion -string en "$CONTENTS_DIR/Info.plist"

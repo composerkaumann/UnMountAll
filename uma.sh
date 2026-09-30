@@ -15,7 +15,7 @@ readonly MOUNT="/sbin/mount"
 readonly BASE64="/usr/bin/base64"
 readonly KILLALL="/usr/bin/killall"
 
-WORK_DIR="$(/usr/bin/mktemp -d "${TMPDIR:-/tmp}/unmount-all.XXXXXX")" || exit 1
+WORK_DIR="$(/usr/bin/mktemp -d "${TMPDIR:-/tmp}/uma.XXXXXX")" || exit 1
 trap '/bin/rm -rf "$WORK_DIR"' EXIT HUP INT TERM
 
 encode() {
@@ -394,12 +394,12 @@ print_human() {
 usage() {
     /usr/bin/printf '%s\n' \
         'Usage:' \
-        '  unmount-all.sh --list' \
-        '  unmount-all.sh --dry-run' \
-        '  unmount-all.sh --unmount-all' \
-        '  unmount-all.sh --unmount TYPE TARGET' \
-        '  unmount-all.sh --force TYPE TARGET' \
-        '  unmount-all.sh --refresh-finder' \
+        '  uma.sh --list' \
+        '  uma.sh --dry-run' \
+        '  uma.sh --unmount-all' \
+        '  uma.sh --unmount TYPE TARGET' \
+        '  uma.sh --force TYPE TARGET' \
+        '  uma.sh --refresh-finder' \
         '' \
         'TYPE is physical, image, or network.'
 }

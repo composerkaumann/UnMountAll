@@ -11,7 +11,7 @@
 		A10000000000000000000003 /* MountTarget.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000003 /* MountTarget.swift */; };
 		A10000000000000000000004 /* ScriptRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000004 /* ScriptRunner.swift */; };
 		A10000000000000000000005 /* UnmountAllApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000005 /* UnmountAllApp.swift */; };
-		A10000000000000000000006 /* unmount-all.sh in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000006 /* unmount-all.sh */; };
+		A10000000000000000000006 /* uma.sh in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000006 /* uma.sh */; };
 		A10000000000000000000007 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000007 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -21,7 +21,7 @@
 		A20000000000000000000003 /* MountTarget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MountTarget.swift; sourceTree = "<group>"; };
 		A20000000000000000000004 /* ScriptRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptRunner.swift; sourceTree = "<group>"; };
 		A20000000000000000000005 /* UnmountAllApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnmountAllApp.swift; sourceTree = "<group>"; };
-		A20000000000000000000006 /* unmount-all.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "unmount-all.sh"; sourceTree = SOURCE_ROOT; };
+		A20000000000000000000006 /* uma.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "uma.sh"; sourceTree = SOURCE_ROOT; };
 		A20000000000000000000007 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A20000000000000000000008 /* Version.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Version.xcconfig; sourceTree = "<group>"; };
 		A20000000000000000000009 /* UMA.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = UMA.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -46,7 +46,7 @@
 				A40000000000000000000002 /* Sources */,
 				A40000000000000000000003 /* Assets */,
 				A40000000000000000000004 /* Config */,
-				A20000000000000000000006 /* unmount-all.sh */,
+				A20000000000000000000006 /* uma.sh */,
 				A2000000000000000000000C /* package_app.sh */,
 				A2000000000000000000000A /* Package.swift */,
 				A2000000000000000000000B /* README.md */,
@@ -138,7 +138,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A10000000000000000000006 /* unmount-all.sh in Resources */,
+				A10000000000000000000006 /* uma.sh in Resources */,
 				A10000000000000000000007 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -12,7 +12,7 @@ enum ScriptRunnerError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .scriptNotFound:
-            "The bundled unmount-all.sh script could not be found."
+            "The bundled uma.sh script could not be found."
         }
     }
 }
@@ -44,12 +44,12 @@ enum ScriptRunner {
     }
 
     private static func locateScript() throws -> URL {
-        if let bundled = Bundle.main.url(forResource: "unmount-all", withExtension: "sh") {
+        if let bundled = Bundle.main.url(forResource: "uma", withExtension: "sh") {
             return bundled
         }
 
         let workingCopy = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
-            .appendingPathComponent("unmount-all.sh")
+            .appendingPathComponent("uma.sh")
         if FileManager.default.fileExists(atPath: workingCopy.path) {
             return workingCopy
         }
