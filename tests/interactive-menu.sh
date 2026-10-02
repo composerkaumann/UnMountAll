@@ -23,6 +23,10 @@ run_action() {
     /usr/bin/printf 'Ejected successfully\n'
 }
 
+refresh_finder() {
+    /usr/bin/printf 'refresh-finder\n' >>"$FIXTURE_DIR/actions"
+}
+
 check_menu() {
     local name="$1" input="$2" expected="$3"
     FIXTURE_DIR="$WORK_DIR/$name"
@@ -49,6 +53,7 @@ if /usr/bin/grep -Fq 'FORCE' "$FIXTURE_DIR/output"; then
     /usr/bin/printf 'FAIL: initial menu mentions FORCE\n' >&2
     exit 1
 fi
+check_menu refresh-finder-confirmation 'f\nn\nF\ny\nq\n' 'refresh-finder\n'
 check_menu eof '' ''
 FIXTURE_COUNT=12
 check_menu multiple-digit-choices '12,10\nq\n' 'disk12:false\ndisk10:false\n'

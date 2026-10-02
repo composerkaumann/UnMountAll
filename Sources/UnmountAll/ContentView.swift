@@ -61,7 +61,8 @@ struct ContentView: View {
             KeyboardShortcutMonitor(
                 onNumber: handleNumberShortcut,
                 onReturn: handleReturnShortcut,
-                onRescan: handleRescanShortcut
+                onRescan: handleRescanShortcut,
+                onRefreshFinder: handleRefreshFinderShortcut
             )
             .frame(width: 0, height: 0)
         )
@@ -92,7 +93,10 @@ struct ContentView: View {
             Button {
                 model.requestFinderRefresh()
             } label: {
-                Label("Refresh Finder", systemImage: "arrow.triangle.2.circlepath")
+                HStack(spacing: 7) {
+                    Label("Refresh Finder", systemImage: "arrow.triangle.2.circlepath")
+                    KeyCap(title: "F")
+                }
             }
             .disabled(model.phase.isBusy)
         }
@@ -209,6 +213,15 @@ struct ContentView: View {
         return true
     }
 
+    private func handleRefreshFinderShortcut() -> Bool {
+        guard !model.phase.isBusy,
+              model.forceConfirmation == nil,
+              !model.forceAllConfirmation,
+              !model.finderRefreshConfirmation else { return false }
+        model.requestFinderRefresh()
+        return true
+    }
+
     private func progressView(_ title: String) -> some View {
         VStack(spacing: 12) {
             ProgressView()
@@ -305,9 +318,11 @@ private struct KeyboardShortcutMonitor: NSViewRepresentable {
     let onNumber: (Int) -> Bool
     let onReturn: () -> Bool
     let onRescan: () -> Bool
+    let onRefreshFinder: () -> Bool
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(onNumber: onNumber, onReturn: onReturn, onRescan: onRescan)
+        Coordinator(onNumber: onNumber, onReturn: onReturn, onRescan: onRescan,
+                    onRefreshFinder: onRefreshFinder)
     }
 
     func makeNSView(context: Context) -> NSView {
@@ -318,6 +333,7 @@ private struct KeyboardShortcutMonitor: NSViewRepresentable {
         context.coordinator.onNumber = onNumber
         context.coordinator.onReturn = onReturn
         context.coordinator.onRescan = onRescan
+        context.coordinator.onRefreshFinder = onRefreshFinder
     }
 
     static func dismantleNSView(_ nsView: NSView, coordinator: Coordinator) {
@@ -329,16 +345,19 @@ private struct KeyboardShortcutMonitor: NSViewRepresentable {
         var onNumber: (Int) -> Bool
         var onReturn: () -> Bool
         var onRescan: () -> Bool
+        var onRefreshFinder: () -> Bool
         private var monitor: Any?
 
         init(
             onNumber: @escaping (Int) -> Bool,
             onReturn: @escaping () -> Bool,
-            onRescan: @escaping () -> Bool
+            onRescan: @escaping () -> Bool,
+            onRefreshFinder: @escaping () -> Bool
         ) {
             self.onNumber = onNumber
             self.onReturn = onReturn
             self.onRescan = onRescan
+            self.onRefreshFinder = onRefreshFinder
             monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
                 guard let self,
                       !event.isARepeat,
@@ -353,6 +372,9 @@ private struct KeyboardShortcutMonitor: NSViewRepresentable {
                     return nil
                 }
                 if event.keyCode == 15, self.onRescan() {
+                    return nil
+                }
+                if event.keyCode == 3, self.onRefreshFinder() {
                     return nil
                 }
                 return event

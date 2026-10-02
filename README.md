@@ -28,6 +28,7 @@ a bulk unmount leaves only failures, the same keys activate each row's force
 action and **Return/Enter** activates **Force All**.
 Press **R** to rescan at any time when no unmount operation or confirmation is
 in progress.
+Press **F** to open the Refresh Finder confirmation.
 
 All window actions are mirrored in the native macOS **Actions** menu. The menu
 uses the same enabled states, confirmation dialogs, Return/R/1–9 shortcuts, and
@@ -76,7 +77,8 @@ With `$HOME/.local/bin` on your shell's `PATH`, run `uma`, `uma --help`,
 or `uma --unmount-all` from any directory. Running `uma` or `uma.sh`
 without arguments opens a numbered interactive mount menu. Enter one number
 or several separated by commas to unmount those items, `0` to unmount all,
-`r` to rescan, or `q` to quit. Failed items return in the menu marked
+`r` to rescan, `f` to refresh Finder (with confirmation), or `q` to quit.
+Failed items return in the menu marked
 `FORCE`; choosing them again requests force-unmount confirmation. Other
 selected items continue even if one fails. Use `uma --list` for a plain,
 noninteractive list. Repeat the install commands after

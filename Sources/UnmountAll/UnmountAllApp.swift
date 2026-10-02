@@ -59,7 +59,9 @@ private struct UMACommands: Commands {
             Button("Refresh Finder") {
                 model.requestFinderRefresh()
             }
-            .disabled(model.phase.isBusy)
+            .keyboardShortcut("f", modifiers: [])
+            .disabled(model.phase.isBusy || model.forceConfirmation != nil ||
+                      model.forceAllConfirmation || model.finderRefreshConfirmation)
         }
     }
 

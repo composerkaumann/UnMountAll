@@ -425,11 +425,11 @@ interactive_menu() {
 
         /usr/bin/printf '\nChoose mount number(s), separated by commas.\n'
         if [ "$failure_count" -eq 0 ]; then
-            /usr/bin/printf '0 = unmount all, r = rescan, q = quit\n'
+            /usr/bin/printf '0 = unmount all, r = rescan, f = refresh Finder, q = quit\n'
         elif [ "$failure_count" -eq "$count" ]; then
-            /usr/bin/printf '0 = FORCE all, r = rescan, q = quit\n'
+            /usr/bin/printf '0 = FORCE all, r = rescan, f = refresh Finder, q = quit\n'
         else
-            /usr/bin/printf '0 = unmount all (FORCE for failed items), r = rescan, q = quit\n'
+            /usr/bin/printf '0 = unmount all (FORCE for failed items), r = rescan, f = refresh Finder, q = quit\n'
         fi
         /usr/bin/printf '> '
         local choice
@@ -438,6 +438,13 @@ interactive_menu() {
         case "$choice" in
             q|Q) return 0 ;;
             r|R) continue ;;
+            f|F)
+                /usr/bin/printf 'Finder will briefly quit and relaunch. Continue? [y/N] '
+                local refresh_answer
+                IFS= read -r refresh_answer || return 0
+                case "$refresh_answer" in y|Y|yes|YES) refresh_finder ;; esac
+                continue
+                ;;
         esac
 
         local selected=() index token invalid=false seen=','
@@ -460,7 +467,7 @@ interactive_menu() {
             invalid=true
         fi
         if [ "$invalid" = true ]; then
-            /usr/bin/printf 'Invalid selection. Choose 1–%d, 0, r, or q.\n' "$count"
+            /usr/bin/printf 'Invalid selection. Choose 1–%d, 0, r, f, or q.\n' "$count"
             continue
         fi
         [ "${#selected[@]}" -gt 0 ] || continue
