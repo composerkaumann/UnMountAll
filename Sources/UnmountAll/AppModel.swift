@@ -19,6 +19,14 @@ final class AppModel: ObservableObject {
     @Published var forceAllConfirmation = false
     @Published var finderRefreshConfirmation = false
 
+    var hasActiveConfirmation: Bool {
+        forceConfirmation != nil || forceAllConfirmation || finderRefreshConfirmation
+    }
+
+    var windowActionsDisabled: Bool {
+        phase.isBusy || hasActiveConfirmation
+    }
+
     var hasNormalTargets: Bool {
         targets.contains { $0.failureMessage == nil }
     }
@@ -28,7 +36,7 @@ final class AppModel: ObservableObject {
     }
 
     func scan() async {
-        guard !phase.isBusy else { return }
+        guard !windowActionsDisabled else { return }
         phase = .scanning
         statusMessage = "Scanning mounted items…"
         defer { phase = .idle }
@@ -53,7 +61,7 @@ final class AppModel: ObservableObject {
     }
 
     func unmountAll() async {
-        guard !phase.isBusy, !targets.isEmpty else { return }
+        guard !windowActionsDisabled, !targets.isEmpty else { return }
         phase = .unmounting
         statusMessage = "Unmounting all items…"
         defer { phase = .idle }
@@ -82,7 +90,7 @@ final class AppModel: ObservableObject {
     }
 
     func unmount(_ target: MountTarget) async {
-        guard !phase.isBusy, target.failureMessage == nil else { return }
+        guard !windowActionsDisabled, target.failureMessage == nil else { return }
         phase = .unmounting
         statusMessage = "Unmounting \(target.name)…"
         defer { phase = .idle }
@@ -110,11 +118,12 @@ final class AppModel: ObservableObject {
     }
 
     func requestForce(_ target: MountTarget) {
+        guard !windowActionsDisabled else { return }
         forceConfirmation = target
     }
 
     func requestFinderRefresh() {
-        guard !phase.isBusy else { return }
+        guard !windowActionsDisabled else { return }
         finderRefreshConfirmation = true
     }
 
@@ -138,12 +147,12 @@ final class AppModel: ObservableObject {
     }
 
     func requestForceAll() {
-        guard !phase.isBusy, hasActionableFailures else { return }
+        guard !windowActionsDisabled, hasActionableFailures else { return }
         forceAllConfirmation = true
     }
 
     func leaveMounted(_ target: MountTarget) {
-        guard !phase.isBusy,
+        guard !windowActionsDisabled,
               let index = targets.firstIndex(where: { $0.id == target.id }) else { return }
         targets[index].isLeftMounted = true
         targets[index].failureMessage = "Left mounted by user."

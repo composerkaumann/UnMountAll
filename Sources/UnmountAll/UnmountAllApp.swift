@@ -33,8 +33,8 @@ private struct UMACommands: Commands {
                     model.requestForceAll()
                 }
             }
-            .keyboardShortcut(.return, modifiers: [])
-            .disabled(model.phase.isBusy || (!model.hasNormalTargets && !model.hasActionableFailures))
+            .keyboardShortcut("u", modifiers: [])
+            .disabled(model.windowActionsDisabled || (!model.hasNormalTargets && !model.hasActionableFailures))
 
             Divider()
 
@@ -44,7 +44,7 @@ private struct UMACommands: Commands {
                     Button("Leave Mounted: \(target.name)") {
                         model.leaveMounted(target)
                     }
-                    .disabled(model.phase.isBusy)
+                    .disabled(model.windowActionsDisabled)
                 }
             }
 
@@ -54,14 +54,13 @@ private struct UMACommands: Commands {
                 Task { await model.scan() }
             }
             .keyboardShortcut("r", modifiers: [])
-            .disabled(model.phase.isBusy)
+            .disabled(model.windowActionsDisabled)
 
             Button("Refresh Finder") {
                 model.requestFinderRefresh()
             }
             .keyboardShortcut("f", modifiers: [])
-            .disabled(model.phase.isBusy || model.forceConfirmation != nil ||
-                      model.forceAllConfirmation || model.finderRefreshConfirmation)
+            .disabled(model.windowActionsDisabled)
         }
     }
 
@@ -75,12 +74,12 @@ private struct UMACommands: Commands {
                 performAction(for: target)
             }
             .keyboardShortcut(KeyEquivalent(Character(String(number))), modifiers: [])
-            .disabled(model.phase.isBusy)
+            .disabled(model.windowActionsDisabled)
         } else {
             Button(actionTitle(for: target)) {
                 performAction(for: target)
             }
-            .disabled(model.phase.isBusy)
+            .disabled(model.windowActionsDisabled)
         }
     }
 

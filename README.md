@@ -23,15 +23,17 @@ Each failed item gets its own **Force Eject** or **Force Unmount** button and a
 
 Each mounted item also has its own **Unmount** button. The first nine visible
 rows use keyboard shortcuts **1–9** from either the number row or numeric
-keypad. **Return** and numeric-keypad **Enter** activate **Unmount All**. After
+keypad. **U** activates **Unmount All**. After
 a bulk unmount leaves only failures, the same keys activate each row's force
-action and **Return/Enter** activates **Force All**.
+action and **U** activates **Force All**. Return/Enter are reserved for
+dialog controls; all main-window actions are disabled while a confirmation
+dialog is open.
 Press **R** to rescan at any time when no unmount operation or confirmation is
 in progress.
 Press **F** to open the Refresh Finder confirmation.
 
 All window actions are mirrored in the native macOS **Actions** menu. The menu
-uses the same enabled states, confirmation dialogs, Return/R/1–9 shortcuts, and
+uses the same enabled states, confirmation dialogs, U/R/F/1–9 shortcuts, and
 per-item Unmount, Force, and Leave Mounted actions as the window.
 
 ## Shell script

@@ -51,6 +51,7 @@ struct ContentView: View {
             Button("Refresh Finder") {
                 Task { await model.refreshFinderConfirmed() }
             }
+            .keyboardShortcut(.defaultAction)
             Button("Cancel", role: .cancel) {
                 model.finderRefreshConfirmation = false
             }
@@ -60,7 +61,7 @@ struct ContentView: View {
         .background(
             KeyboardShortcutMonitor(
                 onNumber: handleNumberShortcut,
-                onReturn: handleReturnShortcut,
+                onUnmountAll: handleUnmountAllShortcut,
                 onRescan: handleRescanShortcut,
                 onRefreshFinder: handleRefreshFinderShortcut
             )
@@ -89,7 +90,7 @@ struct ContentView: View {
                     KeyCap(title: "R")
                 }
             }
-            .disabled(model.phase.isBusy)
+            .disabled(model.windowActionsDisabled)
             Button {
                 model.requestFinderRefresh()
             } label: {
@@ -98,7 +99,7 @@ struct ContentView: View {
                     KeyCap(title: "F")
                 }
             }
-            .disabled(model.phase.isBusy)
+            .disabled(model.windowActionsDisabled)
         }
         .padding(20)
         .fixedSize(horizontal: false, vertical: true)
@@ -142,14 +143,14 @@ struct ContentView: View {
             Button(action: primaryAction) {
                 HStack(spacing: 9) {
                     Label(primaryButtonTitle, systemImage: primaryButtonSymbol)
-                    KeyCap(title: "↩")
+                    KeyCap(title: "U")
                 }
                 .frame(minWidth: 122)
             }
             .buttonStyle(.borderedProminent)
             .tint(model.hasNormalTargets ? .accentColor : .red)
             .controlSize(.large)
-            .disabled(model.phase.isBusy || !hasPrimaryAction)
+            .disabled(model.windowActionsDisabled || !hasPrimaryAction)
         }
         .padding(16)
         .fixedSize(horizontal: false, vertical: true)
@@ -174,7 +175,7 @@ struct ContentView: View {
     }
 
     private func primaryAction() {
-        guard !model.phase.isBusy else { return }
+        guard !model.windowActionsDisabled else { return }
         if model.hasNormalTargets {
             Task { await model.unmountAll() }
         } else {
@@ -183,9 +184,7 @@ struct ContentView: View {
     }
 
     private func handleNumberShortcut(_ number: Int) -> Bool {
-        guard !model.phase.isBusy,
-              model.forceConfirmation == nil,
-              !model.forceAllConfirmation,
+        guard !model.windowActionsDisabled,
               let target = model.targetForShortcut(number) else { return false }
 
         if target.failureMessage == nil {
@@ -196,28 +195,21 @@ struct ContentView: View {
         return true
     }
 
-    private func handleReturnShortcut() -> Bool {
-        guard !model.phase.isBusy,
-              model.forceConfirmation == nil,
-              !model.forceAllConfirmation,
+    private func handleUnmountAllShortcut() -> Bool {
+        guard !model.windowActionsDisabled,
               hasPrimaryAction else { return false }
         primaryAction()
         return true
     }
 
     private func handleRescanShortcut() -> Bool {
-        guard !model.phase.isBusy,
-              model.forceConfirmation == nil,
-              !model.forceAllConfirmation else { return false }
+        guard !model.windowActionsDisabled else { return false }
         Task { await model.scan() }
         return true
     }
 
     private func handleRefreshFinderShortcut() -> Bool {
-        guard !model.phase.isBusy,
-              model.forceConfirmation == nil,
-              !model.forceAllConfirmation,
-              !model.finderRefreshConfirmation else { return false }
+        guard !model.windowActionsDisabled else { return false }
         model.requestFinderRefresh()
         return true
     }
@@ -277,7 +269,7 @@ private struct TargetRow: View {
                     }
                     .buttonStyle(.bordered)
                 }
-                .disabled(model.phase.isBusy)
+                .disabled(model.windowActionsDisabled)
             } else {
                 HStack(spacing: 8) {
                     Button("Unmount") {
@@ -289,7 +281,7 @@ private struct TargetRow: View {
                         KeyCap(title: "\(number)")
                     }
                 }
-                .disabled(model.phase.isBusy)
+                .disabled(model.windowActionsDisabled)
             }
         }
         .padding(.vertical, 5)
@@ -316,12 +308,12 @@ private struct KeyCap: View {
 
 private struct KeyboardShortcutMonitor: NSViewRepresentable {
     let onNumber: (Int) -> Bool
-    let onReturn: () -> Bool
+    let onUnmountAll: () -> Bool
     let onRescan: () -> Bool
     let onRefreshFinder: () -> Bool
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(onNumber: onNumber, onReturn: onReturn, onRescan: onRescan,
+        Coordinator(onNumber: onNumber, onUnmountAll: onUnmountAll, onRescan: onRescan,
                     onRefreshFinder: onRefreshFinder)
     }
 
@@ -331,7 +323,7 @@ private struct KeyboardShortcutMonitor: NSViewRepresentable {
 
     func updateNSView(_ nsView: NSView, context: Context) {
         context.coordinator.onNumber = onNumber
-        context.coordinator.onReturn = onReturn
+        context.coordinator.onUnmountAll = onUnmountAll
         context.coordinator.onRescan = onRescan
         context.coordinator.onRefreshFinder = onRefreshFinder
     }
@@ -343,19 +335,19 @@ private struct KeyboardShortcutMonitor: NSViewRepresentable {
     @MainActor
     final class Coordinator {
         var onNumber: (Int) -> Bool
-        var onReturn: () -> Bool
+        var onUnmountAll: () -> Bool
         var onRescan: () -> Bool
         var onRefreshFinder: () -> Bool
         private var monitor: Any?
 
         init(
             onNumber: @escaping (Int) -> Bool,
-            onReturn: @escaping () -> Bool,
+            onUnmountAll: @escaping () -> Bool,
             onRescan: @escaping () -> Bool,
             onRefreshFinder: @escaping () -> Bool
         ) {
             self.onNumber = onNumber
-            self.onReturn = onReturn
+            self.onUnmountAll = onUnmountAll
             self.onRescan = onRescan
             self.onRefreshFinder = onRefreshFinder
             monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
@@ -368,7 +360,7 @@ private struct KeyboardShortcutMonitor: NSViewRepresentable {
                 if let number = Self.number(for: event.keyCode), self.onNumber(number) {
                     return nil
                 }
-                if (event.keyCode == 36 || event.keyCode == 76), self.onReturn() {
+                if event.keyCode == 32, self.onUnmountAll() {
                     return nil
                 }
                 if event.keyCode == 15, self.onRescan() {
