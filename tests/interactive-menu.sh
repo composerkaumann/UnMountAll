@@ -60,3 +60,21 @@ check_menu multiple-digit-choices '12,10\nq\n' 'disk12:false\ndisk10:false\n'
 FIXTURE_COUNT=0
 check_menu empty-list '0\nr\nq\n' ''
 /usr/bin/grep -Fq 'NOTHING MOUNTED' "$FIXTURE_DIR/output"
+
+FIXTURE_COUNT=3
+FIXTURE_DIR="$WORK_DIR/auto"
+/bin/mkdir -p "$FIXTURE_DIR"
+: >"$FIXTURE_DIR/actions"
+auto_unmount >"$FIXTURE_DIR/output" 2>&1
+[ ! -s "$FIXTURE_DIR/output" ]
+/usr/bin/printf 'disk1:false\ndisk2:false\ndisk3:false\n' >"$FIXTURE_DIR/expected"
+/usr/bin/cmp "$FIXTURE_DIR/actions" "$FIXTURE_DIR/expected"
+/usr/bin/printf 'PASS: auto mode is silent, non-force, and continues past failures\n'
+
+discover() {
+    /usr/bin/printf 'Discovery failed\n' >&2
+    return 1
+}
+auto_unmount >"$FIXTURE_DIR/output" 2>&1
+[ ! -s "$FIXTURE_DIR/output" ]
+/usr/bin/printf 'PASS: auto mode exits successfully and silently on discovery failure\n'

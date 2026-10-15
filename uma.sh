@@ -5,6 +5,11 @@
 
 set -u
 
+# Silence even startup diagnostics in the unattended mode.
+if [ "${1:-}" = --auto ]; then
+    exec >/dev/null 2>&1
+fi
+
 PATH=/usr/bin:/bin:/usr/sbin:/sbin
 export PATH
 
@@ -356,6 +361,11 @@ perform_all() {
     done <"$targets_file"
 }
 
+auto_unmount() {
+    # Best effort only: normal unmounts, no input, no output, no force retry.
+    perform_all false false </dev/null >/dev/null 2>&1 || true
+}
+
 perform_target() {
     local kind="$1"
     local target="$2"
@@ -506,6 +516,7 @@ usage() {
         '  uma --list' \
         '  uma --dry-run' \
         '  uma --unmount-all' \
+        '  uma --auto           Quiet non-force unmount all, then exit' \
         '  uma --unmount TYPE TARGET' \
         '  uma --force TYPE TARGET' \
         '  uma --refresh-finder' \
@@ -537,6 +548,9 @@ case "${1:-}" in
         ;;
     --unmount-all)
         perform_all false false | print_human
+        ;;
+    --auto)
+        auto_unmount
         ;;
     --unmount-all-machine)
         perform_all false false

@@ -57,6 +57,11 @@ Unmount everything supported:
 ./uma.sh --unmount-all
 ```
 
+For unattended use, `uma --auto` attempts a normal unmount of every supported
+item and exits without prompts, output, or error messages. It continues past
+busy items, never uses force, and returns exit status 0 even if individual
+unmounts or discovery fail. Items that cannot be unmounted stay mounted.
+
 Force is intentionally limited to a target that the script can rediscover as
 an allowed, currently mounted item:
 
