@@ -124,3 +124,7 @@ The last successful version and build number are persisted in `VERSION` and
 - Internal local filesystems, Time Machine snapshots, and automount entries
   are ignored.
 - Force actions are never automatic.
+- Network shares use `diskutil unmount`, with `umount` as a fallback if the
+  same share remains mounted. Only explicit force actions pass `-f` to the
+  fallback. Success is verified against the mount table before an item is
+  removed from the app's list.

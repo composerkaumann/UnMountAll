@@ -17,6 +17,7 @@ readonly DISKUTIL="/usr/sbin/diskutil"
 readonly HDIUTIL="/usr/bin/hdiutil"
 readonly PLUTIL="/usr/bin/plutil"
 readonly MOUNT="/sbin/mount"
+readonly UMOUNT="/sbin/umount"
 readonly BASE64="/usr/bin/base64"
 readonly KILLALL="/usr/bin/killall"
 
@@ -299,10 +300,68 @@ action_description() {
         physical:true) /usr/bin/printf 'diskutil eject force %s' "$target" ;;
         image:false) /usr/bin/printf 'diskutil eject %s' "$target" ;;
         image:true) /usr/bin/printf 'diskutil eject force %s' "$target" ;;
-        network:false) /usr/bin/printf 'diskutil unmount %s' "$target" ;;
-        network:true) /usr/bin/printf 'diskutil unmount force %s' "$target" ;;
+        network:false) /usr/bin/printf 'diskutil unmount %s (fallback: umount %s)' "$target" "$target" ;;
+        network:true) /usr/bin/printf 'diskutil unmount force %s (fallback: umount -f %s)' "$target" "$target" ;;
         *) /usr/bin/printf 'unsupported action' ;;
     esac
+}
+
+mount_identity_at() {
+    local target="$1" snapshot="$WORK_DIR/action-mounts.txt" line
+    "$MOUNT" >"$snapshot" 2>/dev/null || return 2
+    while IFS= read -r line; do
+        split_mount_line "$line"
+        if [ "$MOUNT_POINT" = "$target" ]; then
+            /usr/bin/printf '%s\t%s' "$MOUNT_TYPE" "$MOUNT_SOURCE"
+            return 0
+        fi
+    done <"$snapshot"
+    return 1
+}
+
+unmount_network() {
+    local target="$1" force="$2" original current state diskutil_output fallback_output
+    original="$(mount_identity_at "$target")"
+    state=$?
+    case "$state" in
+        0) ;;
+        1) /usr/bin/printf 'Already unmounted.\n'; return 0 ;;
+        *) /usr/bin/printf 'Could not verify the current mount.\n' >&2; return 1 ;;
+    esac
+
+    if [ "$force" = true ]; then
+        diskutil_output="$("$DISKUTIL" unmount force "$target" 2>&1)"
+    else
+        diskutil_output="$("$DISKUTIL" unmount "$target" 2>&1)"
+    fi
+    current="$(mount_identity_at "$target")"
+    state=$?
+    if [ "$state" -eq 1 ]; then
+        /usr/bin/printf 'Unmounted successfully.\n'
+        return 0
+    fi
+    if [ "$state" -ne 0 ] || [ "$current" != "$original" ]; then
+        /usr/bin/printf 'The mount changed or could not be verified; no fallback was attempted.\n' >&2
+        return 1
+    fi
+
+    # Network shares may not be represented as disks in Disk Arbitration.
+    # Keep force strictly opt-in, and target only the same mounted share.
+    if [ "$force" = true ]; then
+        fallback_output="$("$UMOUNT" -f "$target" 2>&1)"
+    else
+        fallback_output="$("$UMOUNT" "$target" 2>&1)"
+    fi
+    current="$(mount_identity_at "$target")"
+    state=$?
+    if [ "$state" -eq 1 ]; then
+        /usr/bin/printf 'Unmounted successfully using umount.\n'
+        return 0
+    fi
+    /usr/bin/printf 'Network share is still mounted, or its removal could not be verified.\n' >&2
+    [ -z "$fallback_output" ] || /usr/bin/printf 'umount: %s\n' "$fallback_output" >&2
+    [ -z "$diskutil_output" ] || /usr/bin/printf 'diskutil: %s\n' "$diskutil_output" >&2
+    return 1
 }
 
 run_action() {
@@ -314,8 +373,8 @@ run_action() {
         physical:true) "$DISKUTIL" eject force "$target" ;;
         image:false) "$DISKUTIL" eject "$target" ;;
         image:true) "$DISKUTIL" eject force "$target" ;;
-        network:false) "$DISKUTIL" unmount "$target" ;;
-        network:true) "$DISKUTIL" unmount force "$target" ;;
+        network:false) unmount_network "$target" false ;;
+        network:true) unmount_network "$target" true ;;
         *) /usr/bin/printf 'Unsupported target type: %s\n' "$kind" >&2; return 64 ;;
     esac
 }
